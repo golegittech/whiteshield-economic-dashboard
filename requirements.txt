@@ -1,0 +1,6 @@
+fastapi
+uvicorn
+polars
+fredapi
+pandas
+jinja2

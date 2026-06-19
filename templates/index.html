@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Economic Recovery Dashboard</title>
+    <!-- Include Plotly.js -->
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #f4f7f6; margin: 0; padding: 2rem; color: #333; }
+        .container { max-width: 1000px; margin: 0 auto; background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        h1 { color: #2c3e50; margin-top: 0; }
+        p { color: #7f8c8d; line-height: 1.6; }
+        #loading { text-align: center; color: #3498db; font-weight: bold; margin: 2rem 0; font-size: 1.2rem; }
+        .chart-container { margin-bottom: 3rem; } 
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>US Economic Recovery Dashboard</h1>
+        <p>This prototype tracks macroeconomic recovery by aggregating <strong>Unemployment</strong>, <strong>Retail Sales</strong>, and <strong>CPI Inflation</strong> into a unified 0-100 normalized Z-score index. The second chart isolates true Year-over-Year (YoY) Inflation, and the third chart tracks live daily market sentiment via the S&P 500.</p>
+        
+        <div id="loading">Fetching live economic data from FRED API... Please wait...</div>
+        
+        <!-- Containers for our THREE charts -->
+        <div id="index-chart" class="chart-container"></div>
+        <div id="inflation-chart" class="chart-container"></div>
+        <div id="daily-chart" class="chart-container"></div>
+    </div>
+
+    <script>
+        // Fetch all the data at once from our FastAPI backend
+        fetch('/api/data')
+            .then(response => response.json())
+            .then(data => {
+                // Hide the loading text
+                document.getElementById('loading').style.display = 'none';
+
+                // --- CHART 1: Composite Recovery Index (Monthly) ---
+                const indexTrace = {
+                    x: data.dates,
+                    y: data.scores,
+                    type: 'scatter',
+                    mode: 'lines',
+                    line: {color: '#1f77b4', width: 3}, // Blue line
+                    fill: 'tozeroy',
+                    fillcolor: 'rgba(31, 119, 180, 0.1)'
+                };
+                const indexLayout = {
+                    title: 'Composite Recovery Index (0 = Severe Stress, 100 = Max Recovery)',
+                    xaxis: {title: 'Date', showgrid: false},
+                    yaxis: {title: 'Recovery Score', range: [0, 105]},
+                    paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)',
+                    margin: {l: 50, r: 20, t: 50, b: 50}
+                };
+                Plotly.newPlot('index-chart', [indexTrace], indexLayout, {responsive: true});
+
+                // --- CHART 2: YoY Inflation Rate (Monthly) ---
+                const inflationTrace = {
+                    x: data.dates,
+                    y: data.inflation,
+                    type: 'scatter',
+                    mode: 'lines',
+                    line: {color: '#e74c3c', width: 3}, // Red line
+                    fill: 'tozeroy',
+                    fillcolor: 'rgba(231, 76, 60, 0.1)'
+                };
+                const inflationLayout = {
+                    title: 'Year-over-Year (YoY) CPI Inflation Rate (%)',
+                    xaxis: {title: 'Date', showgrid: false},
+                    yaxis: {title: 'Inflation Rate (%)'},
+                    paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)',
+                    margin: {l: 50, r: 20, t: 50, b: 50}
+                };
+                Plotly.newPlot('inflation-chart', [inflationTrace], inflationLayout, {responsive: true});
+
+                // --- CHART 3: S&P 500 (Daily Pulse) ---
+                const dailyTrace = {
+                    x: data.daily_dates,
+                    y: data.daily_values,
+                    type: 'scatter',
+                    mode: 'lines',
+                    line: {color: '#27ae60', width: 2}, // Green line
+                    fill: 'tozeroy',
+                    fillcolor: 'rgba(39, 174, 96, 0.1)'
+                };
+                const dailyLayout = {
+                    title: 'Daily Market Sentiment (S&P 500 Index)',
+                    xaxis: {title: 'Date', showgrid: false},
+                    yaxis: {title: 'S&P 500 Index Value'},
+                    paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)',
+                    margin: {l: 50, r: 20, t: 50, b: 50}
+                };
+                Plotly.newPlot('daily-chart', [dailyTrace], dailyLayout, {responsive: true});
+            })
+            .catch(error => {
+                document.getElementById('loading').innerText = "Error loading data. Check terminal for Python errors.";
+                console.error('Error:', error);
+            });
+    </script>
+</body>
+</html>
