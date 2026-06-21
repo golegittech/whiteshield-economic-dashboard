@@ -7,6 +7,14 @@
     <!-- Include Plotly.js -->
     <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
     <style>
+        .data-explorer { background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 3rem; }
+        .controls { margin-bottom: 1.5rem; display: flex; align-items: center; gap: 10px; }
+        select { padding: 8px 12px; border-radius: 6px; border: 1px solid #ccc; font-size: 1rem; cursor: pointer; }
+        table { width: 100%; border-collapse: collapse; text-align: left; }
+        th, td { padding: 12px 16px; border-bottom: 1px solid #eee; }
+        th { background-color: #f8f9fa; color: #2c3e50; font-weight: 600; }
+        tr:hover { background-color: #f1f4f8; transition: background 0.2s; }
+
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #f4f7f6; margin: 0; padding: 2rem; color: #333; }
         .container { max-width: 1000px; margin: 0 auto; background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
         h1 { color: #2c3e50; margin-top: 0; }
@@ -26,6 +34,28 @@
         <div id="index-chart" class="chart-container"></div>
         <div id="inflation-chart" class="chart-container"></div>
         <div id="daily-chart" class="chart-container"></div>
+
+        <div class="data-explorer">
+    <h2 style="margin-top: 0; color: #2c3e50;">Raw Data Explorer</h2>
+    <div class="controls">
+        <label for="yearSelect" style="font-weight: bold; color: #7f8c8d;">Filter by Year:</label>
+        <select id="yearSelect"></select>
+    </div>
+    
+    <div style="overflow-x: auto;">
+        <table id="dataTable">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Recovery Index (0-100)</th>
+                    <th>YoY Inflation (%)</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody">
+                </tbody>
+        </table>
+    </div>
+</div>
     </div>
 
     <script>
@@ -92,6 +122,60 @@
                     margin: {l: 50, r: 20, t: 50, b: 50}
                 };
                 Plotly.newPlot('daily-chart', [dailyTrace], dailyLayout, {responsive: true});
+
+                // --- INTERACTIVE DATA TABLE LOGIC ---
+
+// 1. Zip the arrays together into objects so they are easy to filter
+const tableData = data.dates.map((dateString, index) => {
+    return {
+        date: dateString,
+        year: dateString.split('-')[0], // Extract just the "2026" part
+        score: data.scores[index],
+        inflation: data.inflation[index]
+    };
+});
+
+// 2. Extract unique years and sort them highest to lowest (e.g., 2026, 2025, 2024...)
+const uniqueYears = [...new Set(tableData.map(d => d.year))].sort().reverse();
+
+// 3. Populate the Dropdown Menu
+const yearSelect = document.getElementById('yearSelect');
+uniqueYears.forEach(year => {
+    const option = document.createElement('option');
+    option.value = year;
+    option.textContent = year;
+    yearSelect.appendChild(option);
+});
+
+// 4. Create the function that draws the table rows
+const tableBody = document.getElementById('tableBody');
+
+function renderTable(selectedYear) {
+    // Clear out the old rows
+    tableBody.innerHTML = ''; 
+    
+    // Filter the data for only the selected year
+    const filteredData = tableData.filter(d => d.year === selectedYear);
+    
+    // Create a new HTML row for each month
+    filteredData.forEach(row => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td style="font-family: monospace;">${row.date}</td>
+            <td style="color: #1f77b4; font-weight: bold;">${row.score.toFixed(2)}</td>
+            <td style="color: #e74c3c; font-weight: bold;">${row.inflation.toFixed(2)}%</td>
+        `;
+        tableBody.appendChild(tr);
+    });
+}
+
+// 5. Run it for the first time using the most recent year
+renderTable(uniqueYears[0]);
+
+// 6. Listen for when the user changes the dropdown, and update instantly!
+yearSelect.addEventListener('change', (event) => {
+    renderTable(event.target.value);
+});
             })
             .catch(error => {
                 document.getElementById('loading').innerText = "Error loading data. Check terminal for Python errors.";
