@@ -36,6 +36,12 @@
         <div id="daily-chart" class="chart-container"></div>
 
         <div class="data-explorer">
+            <h2 style="margin-top: 0; color: #2c3e50;">The Transmission Mechanism</h2>
+            <p style="color: #7f8c8d; margin-bottom: 1.5rem;">Observe how raising the Federal Funds Rate drives up Mortgage Rates, which eventually cools down YoY Inflation.</p>
+            <div id="transmission-chart"></div>
+        </div>
+
+        <div class="data-explorer">
     <h2 style="margin-top: 0; color: #2c3e50;">Raw Data Explorer</h2>
     <div class="controls">
         <label for="yearSelect" style="font-weight: bold; color: #7f8c8d;">Filter by Year:</label>
@@ -121,6 +127,43 @@
                     paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)',
                     margin: {l: 50, r: 20, t: 50, b: 50}
                 };
+                
+                // --- THE TRANSMISSION MECHANISM CHART ---
+                const traceInflation = {
+                    x: data.dates,
+                    y: data.inflation,
+                    name: 'YoY Inflation',
+                    type: 'scatter',
+                    line: { color: '#e74c3c', width: 3 } // Red for Inflation
+                };
+
+                const traceFedRate = {
+                    x: data.dates,
+                    y: data.fed_rate,
+                    name: 'Fed Funds Rate',
+                    type: 'scatter',
+                    line: { color: '#2c3e50', width: 3, dash: 'dot' } // Dark dotted line for the Fed
+                };
+
+                const traceMortgage = {
+                    x: data.dates,
+                    y: data.mortgage_rate,
+                    name: '30-Yr Mortgage',
+                    type: 'scatter',
+                    line: { color: '#f39c12', width: 3 } // Orange for Housing
+                };
+
+                const layoutTransmission = {
+                    title: 'Monetary Policy Ripple Effect',
+                    xaxis: { title: 'Date' },
+                    yaxis: { title: 'Percentage (%)' },
+                    plot_bgcolor: '#f8f9fa',
+                    paper_bgcolor: '#ffffff',
+                    margin: { l: 50, r: 20, t: 50, b: 50 },
+                    legend: { orientation: 'h', y: -0.2 }
+                };
+
+                Plotly.newPlot('transmission-chart', [traceInflation, traceFedRate, traceMortgage], layoutTransmission);
                 Plotly.newPlot('daily-chart', [dailyTrace], dailyLayout, {responsive: true});
 
                 // --- INTERACTIVE DATA TABLE LOGIC ---

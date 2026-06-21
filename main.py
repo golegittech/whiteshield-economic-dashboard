@@ -32,7 +32,9 @@ def get_recovery_data():
     indicators = {
         "CPIAUCSL": "CPI_Inflation",
         "RSAFS": "Retail_Sales",
-        "UNRATE": "Unemployment_Rate"
+        "UNRATE": "Unemployment_Rate",
+        "FEDFUNDS": "Fed_Rate",       # NEW: The Medicine
+        "MORTGAGE30US": "Mortgage_Rate"
     }
 
     start_date_monthly = datetime.now() - timedelta(days=6*365)
@@ -51,7 +53,9 @@ def get_recovery_data():
     combined_df = combined_df.with_columns([
         pl.col("CPI_Inflation").cast(pl.Float64).fill_nan(None),
         pl.col("Retail_Sales").cast(pl.Float64).fill_nan(None),
-        pl.col("Unemployment_Rate").cast(pl.Float64).fill_nan(None)
+        pl.col("Unemployment_Rate").cast(pl.Float64).fill_nan(None),
+        pl.col("Fed_Rate").cast(pl.Float64).fill_nan(None),      # NEW
+        pl.col("Mortgage_Rate").cast(pl.Float64).fill_nan(None)
     ])
     combined_df = combined_df.sort("date").fill_null(strategy="forward").fill_null(strategy="backward")
     
@@ -98,6 +102,8 @@ def get_recovery_data():
         "dates": combined_df["date"].dt.to_string("%Y-%m-%d").to_list(),
         "scores": combined_df["Recovery_Index_0_to_100"].round(2).to_list(),
         "inflation": combined_df["YoY_Inflation"].round(2).to_list(),
+        "fed_rate": combined_df["Fed_Rate"].round(2).to_list(),           # NEW
+        "mortgage_rate": combined_df["Mortgage_Rate"].round(2).to_list(), # NEW
         "daily_dates": sp500_df["date"].dt.to_string("%Y-%m-%d").to_list(),
         "daily_values": sp500_df["SP500"].round(2).to_list()
     }
