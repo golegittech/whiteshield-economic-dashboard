@@ -41,9 +41,22 @@ def get_recovery_data():
     dfs = []
     
     for series_id, name in indicators.items():
-        data = fred.get_series(series_id, observation_start=start_date_monthly, frequency='m')
-        df = pl.DataFrame({"date": data.index.to_list(), name: data.values.tolist()}).drop_nulls()
+        # 1. Pull the raw data without asking FRED to format it
+        data = fred.get_series(series_id, observation_start=start_date)
+        
+        # 2. Convert to Polars
+        df = pl.DataFrame({
+            "date": data.index.to_list(), 
+            name: data.values.tolist()
+        }).drop_nulls()
+        
         df = df.with_columns(pl.col("date").cast(pl.Date))
+        
+        # 3. Snap every date to the 1st of its current month
+        df = df.with_columns(pl.col("date").dt.truncate("1mo"))
+        # 4. Group all the duplicate 1st-of-the-month rows together and average them
+        df = df.group_by("date").mean().sort("date")
+        
         dfs.append(df)
 
     combined_df = dfs[0]
