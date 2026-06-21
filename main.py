@@ -41,7 +41,7 @@ def get_recovery_data():
     dfs = []
     
     for series_id, name in indicators.items():
-        data = fred.get_series(series_id, observation_start=start_date_monthly)
+        data = fred.get_series(series_id, observation_start=start_date_monthly, frequency='m')
         df = pl.DataFrame({"date": data.index.to_list(), name: data.values.tolist()}).drop_nulls()
         df = df.with_columns(pl.col("date").cast(pl.Date))
         dfs.append(df)
